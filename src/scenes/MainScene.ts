@@ -7,6 +7,7 @@ import type { PlayerCore } from "../utils/ws/WSManager";
 import WSManager from "../utils/ws/WSManager";
 export default class MainScene extends THREE.Scene {
   private generatedNeighbors: Set<string> = new Set();
+  private neighborRooms = new Map<string, THREE.Object3D>();
   public targets: Cube[] = [];
   public me: PlayerCore;
   public wsManager: WSManager;
@@ -19,6 +20,15 @@ export default class MainScene extends THREE.Scene {
     this.wsManager = wsManager;
     const light = new Light();
     this.add(light);
+
+    this.wsManager.onPlayerLeft((id) => {
+      const room = this.neighborRooms.get(id);
+      if (room) {
+        this.remove(room);
+        this.neighborRooms.delete(id);
+      }
+      this.generatedNeighbors.delete(id);
+    });
   }
 
   public initPlayerRoom(playerCore: PlayerCore) {
@@ -26,12 +36,14 @@ export default class MainScene extends THREE.Scene {
     console.log(this.me, "me", this.wsManager.getNeighbors(), "neighbors");
     this.generateRoom(playerCore.room_coord_x, playerCore.room_coord_z);
   }
-  private generateRoom(x: number, z: number) {
+  private generateRoom(x: number, z: number, id?: string) {
     const room = new Cube(false, false, false, true);
     room.position.set(x, 0, z);
 
     room.scale.set(15, 7, 15);
     this.add(room);
+    if (id) this.neighborRooms.set(id, room);
+    return room;
   }
 
   public level(level: number) {
@@ -50,7 +62,14 @@ export default class MainScene extends THREE.Scene {
     this.generateCubes(3, this.me.room_coord_x, this.me.room_coord_z);
 
     this.wsManager.getNeighbors().forEach((neighbor) => {
-      this.generateRoom(neighbor.room_coord_x, neighbor.room_coord_z);
+      if (!this.generatedNeighbors.has(neighbor.id)) {
+        this.generateRoom(
+          neighbor.room_coord_x,
+          neighbor.room_coord_z,
+          neighbor.id
+        );
+        this.generatedNeighbors.add(neighbor.id);
+      }
     });
   }
 
@@ -78,7 +97,11 @@ export default class MainScene extends THREE.Scene {
   public update() {
     this.wsManager.getNeighbors().forEach((neighbor) => {
       if (!this.generatedNeighbors.has(neighbor.id)) {
-        this.generateRoom(neighbor.room_coord_x, neighbor.room_coord_z);
+        this.generateRoom(
+          neighbor.room_coord_x,
+          neighbor.room_coord_z,
+          neighbor.id
+        );
         this.generatedNeighbors.add(neighbor.id);
       }
     });
