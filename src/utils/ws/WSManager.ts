@@ -18,6 +18,7 @@ export default class WSManager {
   private lastMessageTimeById = new Map<string, number>();
   private messageQueue = new Map<string, PlayerCore>();
   private meReadyCallbacks: ((me: PlayerCore) => void)[] = [];
+  private playerLeftCallbacks: ((id: string) => void)[] = [];
   public neighbors = new Map<string, PlayerCore>();
   constructor() {
     this.init();
@@ -62,6 +63,7 @@ export default class WSManager {
     if (message.type === "playerLeft") {
       console.log("Player left ", message.id);
       this.neighbors.delete(message.id);
+      this.playerLeftCallbacks.forEach((cb) => cb(message.id));
     }
     if (message.type === "error") {
       console.log("Error", message);
@@ -90,6 +92,9 @@ export default class WSManager {
   public onMeReady(cb: (me: PlayerCore) => void) {
     if (this.me) cb(this.me);
     else this.meReadyCallbacks.push(cb);
+  }
+  public onPlayerLeft(cb: (id: string) => void) {
+    this.playerLeftCallbacks.push(cb);
   }
   public getNeighbors() {
     return Array.from(this.neighbors.values());
