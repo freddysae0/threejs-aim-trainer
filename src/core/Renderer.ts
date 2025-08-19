@@ -2,9 +2,12 @@ import * as THREE from "three";
 import { EffectComposer, FXAAShader, RenderPass, ShaderPass } from "three/examples/jsm/Addons.js";
 import CustomOutlinePass from "./CustomPass/CustomOutlinePass";
 
-const minPixelRatio = 1;
-const maxPixelRatio = 1.5;
-const pixelRatio = Math.min(maxPixelRatio, Math.max(minPixelRatio, window.devicePixelRatio));
+/**
+ * Base quality bounds. The renderer will dynamically clamp the pixel ratio
+ * between these values depending on the current performance budget.
+ */
+const MIN_PIXEL_RATIO = 1;
+const MAX_PIXEL_RATIO = 1.5;
 
 export default class Renderer {
   renderer: THREE.WebGLRenderer;
@@ -12,16 +15,25 @@ export default class Renderer {
   camera: THREE.PerspectiveCamera;
   private fxaaPass: ShaderPass;
   private outlinePass: CustomOutlinePass;
+  private basePixelRatio: number;
+  private currentPixelRatio: number;
 
   constructor(scene: THREE.Scene, camera: THREE.PerspectiveCamera, canvas?: HTMLCanvasElement) {
     this.camera = camera;
 
+    // Determine initial pixel ratio based on device capabilities.
+    this.basePixelRatio = Math.min(
+      MAX_PIXEL_RATIO,
+      Math.max(MIN_PIXEL_RATIO, window.devicePixelRatio)
+    );
+    this.currentPixelRatio = this.basePixelRatio;
+
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(pixelRatio);
+    this.renderer.setPixelRatio(this.currentPixelRatio);
 
     this.composer = new EffectComposer(this.renderer);
-    this.composer.setPixelRatio(pixelRatio);
+    this.composer.setPixelRatio(this.currentPixelRatio);
     this.composer.setSize(window.innerWidth, window.innerHeight);
 
     // 1) Base render
@@ -47,8 +59,8 @@ export default class Renderer {
     // 3) FXAA at the end
     this.fxaaPass = new ShaderPass(FXAAShader);
     this.fxaaPass.material.uniforms["resolution"].value.set(
-      1 / (window.innerWidth * pixelRatio),
-      1 / (window.innerHeight * pixelRatio)
+      1 / (window.innerWidth * this.currentPixelRatio),
+      1 / (window.innerHeight * this.currentPixelRatio)
     );
     this.composer.addPass(this.fxaaPass);
 
@@ -65,8 +77,8 @@ export default class Renderer {
 
       // update passes
       this.fxaaPass.material.uniforms["resolution"].value.set(
-        1 / (width * pixelRatio),
-        1 / (height * pixelRatio)
+        1 / (width * this.currentPixelRatio),
+        1 / (height * this.currentPixelRatio)
       );
       this.outlinePass.setSize(width, height);
     });
@@ -75,5 +87,31 @@ export default class Renderer {
   get instance() {
     // Return composer so your Loop uses composer.render()
     return this.composer;
+  }
+
+  /**
+   * Adjust post-processing quality dynamically. When the number of players
+   * (or any other load indicator) exceeds the provided threshold, expensive
+   * passes are disabled and the pixel ratio is reduced to maintain
+   * performance.
+   */
+  adjustForPlayers(playerCount: number, threshold = 4) {
+    const heavyLoad = playerCount > threshold;
+    const targetPixelRatio = heavyLoad ? MIN_PIXEL_RATIO : this.basePixelRatio;
+
+    // Update pixel ratios only if there is a change.
+    if (targetPixelRatio !== this.currentPixelRatio) {
+      this.currentPixelRatio = targetPixelRatio;
+      this.renderer.setPixelRatio(this.currentPixelRatio);
+      this.composer.setPixelRatio(this.currentPixelRatio);
+      this.fxaaPass.material.uniforms["resolution"].value.set(
+        1 / (window.innerWidth * this.currentPixelRatio),
+        1 / (window.innerHeight * this.currentPixelRatio)
+      );
+    }
+
+    // Toggle expensive passes
+    this.fxaaPass.enabled = !heavyLoad;
+    this.outlinePass.enabled = !heavyLoad;
   }
 }
