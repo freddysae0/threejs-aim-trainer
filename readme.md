@@ -1,12 +1,12 @@
 <h1 align="center">Three.js Aim Trainer</h1>
 
-<p align="center">A browser FPS aim trainer: shoot the targets as fast as you can. TypeScript + Three.js + Vite.</p>
+<p align="center">The demo that became <a href="https://github.com/Redblock-Online/redblock-client">Redblock</a>: a browser FPS aim trainer made with TypeScript + Three.js + Vite.</p>
 
 <p align="center">
   <img src="preview.gif" alt="Gameplay preview" width="800">
 </p>
 
-> See also **[Redblock](https://github.com/Redblock-Online/redblock-client)**, an open source aim trainer and world builder I contributed to. [Play Redblock in the browser →](https://redblock-client.netlify.app/)
+> **This is the original demo.** I kept developing it into **[Redblock](https://github.com/Redblock-Online/redblock-client)**, an open source aim trainer and world builder for FPS players. [Play Redblock in the browser →](https://redblock-client.netlify.app/)
 
 ## Quick start
 
