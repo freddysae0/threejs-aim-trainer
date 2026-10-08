@@ -1,35 +1,22 @@
-# Aim trainer for shooters, (in ThreeJS)
-<h3 align="center">🎮 Game Preview</h3>
+<h1 align="center">Three.js Aim Trainer</h1>
+
+<p align="center">A browser FPS aim trainer: shoot the targets as fast as you can. TypeScript + Three.js + Vite.</p>
 
 <p align="center">
-  <img src="preview.gif" alt="Preview" width="800">
+  <img src="preview.gif" alt="Gameplay preview" width="800">
 </p>
 
-## How to install
+> See also **[Redblock](https://github.com/Redblock-Online/redblock-client)**, an open source aim trainer and world builder I contributed to. [Play Redblock in the browser →](https://redblock-client.netlify.app/)
+
+## Quick start
 
 ```bash
 npm install
+npm run dev       # http://localhost:5173
+npm run build     # static build in dist/
+npm run preview   # serve the build locally
 ```
 
-## How to run
-
-```bash
-npm run dev
-```
-
-## How to build
-
-```bash
-npm run build
-```
-
-## How to preview
-
-```bash
-npm run preview
-```
-
----
 
 ## 🎮 Gameplay & Controls
 
